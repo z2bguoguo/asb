@@ -25,7 +25,7 @@
         <p class="eyebrow">Android 11 及以上</p>
         <h1>ASB 应用沙盒</h1>
         <p class="lede">用工作资料运行独立的应用副本，按应用管理权限，并向接入 ASB 的应用提供自定义测试数据。</p>
-        <a class="download" href="https://github.com/z2bguoguo/asb/releases/latest">获取 APK ↗</a>
+        <a class="download" href="https://github.com/z2bguoguo/asb/releases">查找 managed-v 版本 ↗</a>
         <ol>
           <li>安装 ASB，打开后点「创建工作资料」，按系统提示完成设置。</li>
           <li>回到桌面，在「工作」标签中打开带公文包标记的 ASB。</li>
@@ -71,12 +71,13 @@ String mode = policy.getString("mode");</code></pre>
             <tr><td><code>files</code></td><td><code>text</code>，文本字符串</td></tr>
           </tbody></table>
         </div>
+        <p>使用调试 APK 时，Provider authority 改为 <code>io.github.z2bguoguo.asb.debug.fixtures</code>。</p>
         <p>调用可能抛出 <code>SecurityException</code>。测试应用需要为接口不可用的情况提供自己的处理逻辑。<code>mode</code> 取值为 <code>block</code>、<code>custom</code>、<code>passthrough</code>。</p>
       </section>
       <section id="release">
         <h2>构建与发布</h2>
-        <p>推送会运行 Android 构建、Lint、Vite 构建并上传构建产物。仓库 Pages 的发布来源选择 GitHub Actions 后，会从 <code>main</code> 自动发布 Wiki。</p>
-        <p>Android 正式版由 <code>v主.次.修订</code> 标签触发。签名设置见 <a href="https://github.com/z2bguoguo/asb#正式发布与升级">仓库 README</a>。ASB 定期检查更新，有新版本时发出通知；下载后核对包名、版本和签名，由 Android 显示安装确认。</p>
+        <p>推送会运行 Android 构建、Lint、Vite 构建并上传构建产物。在 <code>managed-profile</code> 分支的 Actions 构建中下载 <code>ASB-wiki</code>，解压后打开 <code>index.html</code>。</p>
+        <p>Android 正式版由 <code>managed-v主.次.修订</code> 标签触发。签名设置见 <a href="https://github.com/z2bguoguo/asb/tree/managed-profile#正式发布与升级">仓库 README</a>。ASB 定期检查更新，有新版本时发出通知；下载后核对包名、版本和签名，由 Android 显示安装确认。</p>
         <pre><code>./gradlew :app:assembleDebug :app:lintDebug
 cd wiki
 npm ci

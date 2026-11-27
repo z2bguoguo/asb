@@ -39,7 +39,7 @@ public final class UpdateJob extends JobService {
             Updates.Release available = release;
             main.post(() -> {
                 if (running != params) return;
-                if (available != null) notifyUpdate(available.tag);
+                if (available != null) notifyUpdate(available.version());
                 running = null;
                 jobFinished(params, false);
             });

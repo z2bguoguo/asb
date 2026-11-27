@@ -2,7 +2,7 @@ name: Publish signed ASB
 
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ['managed-v*.*.*']
 
 permissions:
   contents: read
@@ -29,9 +29,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git merge-base --is-ancestor HEAD origin/main
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]{0,3})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$ ]]; then
-            echo "Use vMAJOR.MINOR.PATCH with minor and patch below 1000."
+          git merge-base --is-ancestor HEAD origin/managed-profile
+          if [[ ! "$GITHUB_REF_NAME" =~ ^managed-v(0|[1-9][0-9]{0,3})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$ ]]; then
+            echo "Use managed-vMAJOR.MINOR.PATCH with minor and patch below 1000."
             exit 1
           fi
           code=$(( BASH_REMATCH[1] * 1000000 + BASH_REMATCH[2] * 1000 + BASH_REMATCH[3] ))
@@ -41,17 +41,17 @@ jobs:
           fi
           {
             echo "ASB_VERSION_CODE=$code"
-            echo "ASB_VERSION_NAME=${GITHUB_REF_NAME#v}"
+            echo "ASB_VERSION_NAME=${GITHUB_REF_NAME#managed-v}"
           } >> "$GITHUB_ENV"
       - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build and verify the signed APK
         shell: bash
         env:
-          ASB_KEYSTORE_BASE64: ${{ secrets.ASB_KEYSTORE_BASE64 }}
-          ASB_KEYSTORE_PASSWORD: ${{ secrets.ASB_KEYSTORE_PASSWORD }}
-          ASB_KEY_ALIAS: ${{ secrets.ASB_KEY_ALIAS }}
-          ASB_KEY_PASSWORD: ${{ secrets.ASB_KEY_PASSWORD }}
-          ASB_SIGNER_SHA256: ${{ vars.ASB_SIGNER_SHA256 }}
+          ASB_KEYSTORE_BASE64: ${{ secrets.ASB_MANAGED_KEYSTORE_BASE64 }}
+          ASB_KEYSTORE_PASSWORD: ${{ secrets.ASB_MANAGED_KEYSTORE_PASSWORD }}
+          ASB_KEY_ALIAS: ${{ secrets.ASB_MANAGED_KEY_ALIAS }}
+          ASB_KEY_PASSWORD: ${{ secrets.ASB_MANAGED_KEY_PASSWORD }}
+          ASB_SIGNER_SHA256: ${{ vars.ASB_MANAGED_SIGNER_SHA256 }}
         run: |
           set -euo pipefail
           : "${ASB_KEYSTORE_BASE64:?Set the existing signing key secret}"
@@ -78,4 +78,4 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" ASB.apk --verify-tag --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" ASB.apk --verify-tag --generate-notes --latest=false

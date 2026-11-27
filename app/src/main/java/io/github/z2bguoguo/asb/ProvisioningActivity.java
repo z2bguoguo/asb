@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Build;
 import java.util.ArrayList;
 
 public final class ProvisioningActivity extends Activity {
@@ -12,8 +13,9 @@ public final class ProvisioningActivity extends Activity {
         Intent request = getIntent();
         if (DevicePolicyManager.ACTION_GET_PROVISIONING_MODE.equals(request.getAction())) {
             int mode = DevicePolicyManager.PROVISIONING_MODE_MANAGED_PROFILE;
-            ArrayList<Integer> allowed = request.getIntegerArrayListExtra(
-                    DevicePolicyManager.EXTRA_PROVISIONING_ALLOWED_PROVISIONING_MODES);
+            ArrayList<Integer> allowed = Build.VERSION.SDK_INT >= 31
+                    ? request.getIntegerArrayListExtra(DevicePolicyManager.EXTRA_PROVISIONING_ALLOWED_PROVISIONING_MODES)
+                    : null;
             if (allowed == null || allowed.contains(mode)) {
                 setResult(RESULT_OK, new Intent().putExtra(DevicePolicyManager.EXTRA_PROVISIONING_MODE, mode));
             }

@@ -24,38 +24,65 @@ import java.util.Set;
 final class Updates {
     private static final String ASSET = "ASB.apk";
     private static final String PREFIX = "https://github.com/z2bguoguo/asb/releases/download/";
-    private static final URI API = URI.create("https://api.github.com/repos/z2bguoguo/asb/releases/latest");
+    private static final String API = "https://api.github.com/repos/z2bguoguo/asb/releases?per_page=30&page=";
+    private static final String MANAGED_PREFIX = "managed-";
+    private static final int PAGE_SIZE = 30;
     private static final int SIZE_LIMIT = 50 * 1024 * 1024;
 
     static final class Release {
         final String tag;
         final URI url;
         Release(String tag, URI url) { this.tag = tag; this.url = url; }
+        String version() { return tag.substring(MANAGED_PREFIX.length() + 1); }
     }
 
     static File apk(Context context) { return new File(context.getCacheDir(), ASSET); }
 
     static Release latest(Context context) throws Exception {
-        HttpURLConnection connection = connect(API);
+        String installed = "v" + context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        Release latest = null;
+        String latestVersion = installed;
+        for (int page = 1; page <= 5; page++) {
+            JSONArray releases = releases(page);
+            for (int i = 0; i < releases.length(); i++) {
+                JSONObject release = releases.getJSONObject(i);
+                if (release.optBoolean("draft") || release.optBoolean("prerelease")) continue;
+                String tag = release.optString("tag_name");
+                if (!tag.matches("managed-v\\d{1,4}\\.\\d{1,3}\\.\\d{1,3}")) continue;
+                String version = tag.substring(MANAGED_PREFIX.length());
+                if (compare(version, latestVersion) <= 0) continue;
+                Release candidate = asset(release, tag);
+                if (candidate != null) {
+                    latest = candidate;
+                    latestVersion = version;
+                }
+            }
+            if (releases.length() < PAGE_SIZE) break;
+        }
+        return latest;
+    }
+
+    private static JSONArray releases(int page) throws Exception {
+        HttpURLConnection connection = connect(URI.create(API + page));
         try {
             int status = connection.getResponseCode();
-            if (status == 404) return null;
+            if (status == 404) return new JSONArray();
             if (status != 200) throw new IOException("GitHub HTTP " + status);
             ByteArrayOutputStream payload = new ByteArrayOutputStream();
             try (InputStream input = connection.getInputStream()) { transfer(input, payload, 2 * 1024 * 1024); }
-            JSONObject release = new JSONObject(payload.toString(StandardCharsets.UTF_8.name()));
-            String tag = release.getString("tag_name");
-            String installed = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-            if (compare(tag, "v" + installed) <= 0) return null;
-            JSONArray assets = release.getJSONArray("assets");
-            URI expected = URI.create(PREFIX + tag + "/" + ASSET);
-            for (int i = 0; i < assets.length(); i++) {
-                JSONObject asset = assets.getJSONObject(i);
-                if (ASSET.equals(asset.optString("name"))
-                        && expected.toString().equals(asset.optString("browser_download_url"))) return new Release(tag, expected);
-            }
-            throw new IOException("发行版缺少 " + ASSET);
+            return new JSONArray(payload.toString(StandardCharsets.UTF_8.name()));
         } finally { connection.disconnect(); }
+    }
+
+    private static Release asset(JSONObject release, String tag) throws Exception {
+        JSONArray assets = release.getJSONArray("assets");
+        URI expected = URI.create(PREFIX + tag + "/" + ASSET);
+        for (int i = 0; i < assets.length(); i++) {
+            JSONObject asset = assets.getJSONObject(i);
+            if (ASSET.equals(asset.optString("name"))
+                    && expected.toString().equals(asset.optString("browser_download_url"))) return new Release(tag, expected);
+        }
+        return null;
     }
 
     private static int compare(String left, String right) throws IOException {
@@ -74,7 +101,7 @@ final class Updates {
         File temp = File.createTempFile("asb-update-", ".apk", context.getCacheDir());
         try {
             fetchArtifact(release.url, temp);
-            verify(context, temp, release.tag.substring(1));
+            verify(context, temp, release.version());
             Files.move(temp.toPath(), apk(context).toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } finally { temp.delete(); }
     }

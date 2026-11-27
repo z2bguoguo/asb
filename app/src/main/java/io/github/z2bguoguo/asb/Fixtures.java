@@ -15,7 +15,7 @@ import java.util.Arrays;
 import android.util.Base64;
 
 public final class Fixtures extends BaseProvider {
-    static final Uri URI = Uri.parse("content://io.github.z2bguoguo.asb.fixtures");
+    static final Uri URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".fixtures");
     static final String[] SERVICES = {"focus", "apps", "camera", "files"};
     static final String[] LABELS = {"窗口焦点", "应用列表", "摄像头", "文件"};
     static final String[] MODES = {"block", "custom", "passthrough"};

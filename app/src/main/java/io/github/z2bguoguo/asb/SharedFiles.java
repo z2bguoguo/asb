@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 public final class SharedFiles extends BaseProvider {
-    static final Uri UPDATE_URI = Uri.parse("content://io.github.z2bguoguo.asb.files/update.apk");
+    static final Uri UPDATE_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".files/update.apk");
 
     @Override public String getType(Uri uri) {
         return UPDATE_URI.equals(uri) ? "application/vnd.android.package-archive" : null;

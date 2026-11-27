@@ -56,7 +56,7 @@ public final class MainActivity extends Activity {
         super.onCreate(state);
         policy = getSystemService(DevicePolicyManager.class);
         activePackage = state == null ? null : state.getString("package");
-        UpdateJob.schedule(this);
+        if (!BuildConfig.DEBUG) UpdateJob.schedule(this);
     }
 
     @Override protected void onResume() {
@@ -258,10 +258,10 @@ public final class MainActivity extends Activity {
 
     private void tools() {
         text(layout, "更新与诊断", 22);
-        button(layout, "检查并安装更新", this::update);
+        if (!BuildConfig.DEBUG) button(layout, "检查并安装更新", this::update);
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
-            button(layout, "开启更新通知", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 5));
+            button(layout, "开启 ASB 通知", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 5));
         }
         button(layout, "检查 Shizuku", () -> {
             if (!Shizuku.pingBinder()) message("Shizuku 在当前资料中未连接。");

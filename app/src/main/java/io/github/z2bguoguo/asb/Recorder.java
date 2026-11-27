@@ -81,6 +81,7 @@ public final class Recorder extends Service {
                 .addAction(new Notification.Action.Builder(null, "停止", stop).build()).build();
     }
 
+    @android.annotation.TargetApi(34)
     private void prepare() throws IOException {
         Rect bounds = getSystemService(WindowManager.class).getMaximumWindowMetrics().getBounds();
         float scale = Math.min(1f, 1920f / Math.max(bounds.width(), bounds.height()));
@@ -98,7 +99,7 @@ public final class Recorder extends Service {
         output = getContentResolver().openFileDescriptor(video, "w");
         if (output == null) throw new IOException("无法写入录像文件");
 
-        recorder = Build.VERSION.SDK_INT >= 31 ? new MediaRecorder(this) : new MediaRecorder();
+        recorder = new MediaRecorder(this);
         recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);

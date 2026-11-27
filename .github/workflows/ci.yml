@@ -2,7 +2,7 @@ name: Build Android and Wiki
 
 on:
   push:
-    branches: [main]
+    branches: [main, managed-profile]
   pull_request:
   workflow_dispatch:
 
