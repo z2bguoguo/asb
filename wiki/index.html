@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ASB 应用沙盒的来宾系统、第三方 APK、虚拟设备策略和构建发布文档">
+<title>ASB 文档 · Android 应用沙盒</title>
+<link rel="stylesheet" href="/src/wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到文档</a>
+<header class="top">
+    <a class="brand" href="#start"><span aria-hidden="true">▣</span> ASB <small>文档</small></a>
+    <div class="links">
+        <a href="https://github.com/z2bguoguo/asb/releases/latest">下载 APK</a>
+        <a href="https://github.com/z2bguoguo/asb">GitHub ↗</a>
+    </div>
+</header>
+<div class="layout">
+    <aside>
+        <nav aria-label="目录">
+            <a href="#start">快速开始</a>
+            <a href="#install">安装第三方应用</a>
+            <a href="#policies">虚拟设备策略</a>
+            <a href="#storage">磁盘和检查点</a>
+            <a href="#architecture">执行模型</a>
+            <a href="#release">构建与签名</a>
+        </nav>
+    </aside>
+    <main id="main">
+        <section id="start" class="hero">
+            <p class="eyebrow">Android 应用沙盒</p>
+            <h1>在来宾系统中<br>运行第三方应用</h1>
+            <p>ASB 在 Android 上模拟一台 32 位 x86 电脑。APK 由来宾 Android 安装和运行，来宾通过模拟的屏幕、磁盘和输入设备交互。</p>
+            <div class="actions">
+                <a class="primary" href="https://github.com/z2bguoguo/asb/releases/latest">获取正式版</a>
+                <a href="#policies">查看设备策略 ↓</a>
+            </div>
+        </section>
+        <section id="install">
+            <h2>安装第三方应用</h2>
+            <ol>
+                <li>安装 ASB，保持 Android System WebView 已更新。准备含 32 位内核的 Android-x86 ISO。Android-x86 4.4-r2 是 v86 上游记录的测试版本，ASB 安装包不附带系统镜像。</li>
+                <li>打开虚拟机，选取 ISO。若要保存安装结果，先创建并选中私有磁盘，再从来宾安装菜单安装到该磁盘。首次测试建议用 512 MiB。</li>
+                <li>安装完来宾后弹出启动光盘。在来宾中正常重启，或点击控制台的 Ctrl+Alt+Del。从主磁盘启动后，在文件策略选择「穿透 · 指定一个文件」并选取单个 APK。</li>
+                <li>Android-x86 自带的终端有 root 权限时，可尝试下方命令。来宾的光驱设备名因镜像而异，先用 <code>ls /dev/block</code> 找到 <code>sr0</code> 或其他光驱节点。未进入 root 终端时，可用来宾自己的文件管理器打开光盘内的 APK，前提是它支持光盘。</li>
+            </ol>
+            <pre><code>mkdir -p /mnt/asb
+mount -t iso9660 -o ro /dev/block/sr0 /mnt/asb
+pm install /mnt/asb/INPUT.APK
+umount /mnt/asb</code></pre>
+            <p>只有与来宾 Android API 和 ABI 兼容的 APK 才能安装。当前针对 32 位 x86 和无原生库的旧版 APK。需要 ARM 原生库、64 位 ABI、新版 Android、Google Play 服务或图形加速的应用可能无法运行。分包需由来宾提供匹配的安装工具，当前交换光盘一次只承载一个文件。</p>
+        </section>
+        <section id="policies">
+            <h2>虚拟设备策略</h2>
+            <div class="table-scroll">
+            <table>
+                <thead><tr><th>能力</th><th>策略</th><th>实际行为</th></tr></thead>
+                <tbody>
+                    <tr><td>文件</td><td>阻止、自定义、指定文件</td><td>弹出光盘，或将用户给出的内容挂到只读 ISO。应用可以把内容复制到来宾磁盘并写入来宾文件。宿主文件原地读写、自动回写和共享目录尚未接入。</td></tr>
+                    <tr><td>窗口焦点</td><td>暂停来宾、仅释放输入</td><td>宿主窗口失焦时停止向来宾发送键鼠事件。默认同时暂停 CPU。第三方应用仍由来宾 Android 决定窗口焦点。</td></tr>
+                    <tr><td>应用列表</td><td>来宾隔离</td><td>第三方应用通过来宾 PackageManager 查询来宾自己的包，遵循来宾 Android 的规则。</td></tr>
+                    <tr><td>摄像头、麦克风、网络</td><td>阻止</td><td>虚拟机未连接这些宿主设备。摄像头画面注入、联网和每应用规则尚未接入。</td></tr>
+                    <tr><td>录屏</td><td>来宾系统授权</td><td>ASB 控制台启用 Android 防截屏。若来宾系统自带录屏，使用其授权和隐私规则。ASB 当前没有专用录屏导出。</td></tr>
+                    <tr><td>Shizuku</td><td>可选宿主诊断</td><td>查看服务连接、版本与 UID。虚拟机在未安装 Shizuku 时也可启动。</td></tr>
+                </tbody>
+            </table></div>
+            <p>自定义 ISO 中的 UTF-8 数据使用 <code>INPUT.TXT</code>。现有第三方 APK 可读取它能访问的来宾文件。来宾 Android 框架仍返回自己的系统信息。</p>
+        </section>
+        <section id="storage">
+            <h2>磁盘和检查点</h2>
+            <p>临时 RAW 磁盘以源文件为基础运行，来宾写入暂存在本次会话。私有磁盘使用 WebView 的应用专用存储。安装系统后先弹出只读光盘，再点「保存检查点」。检查点包含来宾内存和虚拟磁盘改动，关闭后通过「恢复检查点」继续。直接点击「启动」会重新从基础镜像开机。</p>
+            <p>当前保留最新的一个检查点。清除 ASB 应用数据会删除私有磁盘和检查点。转译引擎的存档格式发生变化时需要重新安装来宾。运行和保存会使用额外内存和磁盘空间，建议关闭其他高内存应用。</p>
+        </section>
+        <section id="architecture">
+            <h2>执行模型</h2>
+            <ol>
+                <li>宿主控制台加载随 APK 打包的静态资源。虚拟机没有 Android JavaScript 原生接口和宿主网络设备。</li>
+                <li>v86 将来宾 x86 指令动态转译为 WebAssembly。Android WebView 执行转译后的代码。模拟器处理来宾发出的设备 I/O，APK 的 Android API 调用则由来宾系统完成。</li>
+                <li>虚拟 VGA 承载画面，PS/2 承载键鼠。Android 文件选择器授权的文档经虚拟磁盘或只读光驱进入来宾。虚拟设备规则作用于整台来宾虚拟机。</li>
+            </ol>
+            <p>该方案用于兼容性和隔离实验。转译器、固件和 WebView 属于可信执行链，隔离强度没有经过专门审计。不要把它当作恶意样本分析环境。</p>
+        </section>
+        <section id="release">
+            <h2>构建与签名</h2>
+            <pre><code>npm --prefix vm ci
+npm --prefix vm run build
+npm --prefix vm test
+gradle :app:assembleDebug :app:lintDebug
+
+npm --prefix wiki ci
+npm --prefix wiki run build</code></pre>
+            <p>GitHub Actions 在 <code>main</code> 更新后运行检查。配置好发布密钥后，Actions 使用固定签名打包并发布 <code>ASB-release.apk</code>。Pages 来源设为 GitHub Actions 后，Wiki 会部署到 GitHub Pages。</p>
+            <p>正式版每天后台检查更新。下载后会核验 SHA-256、包名、递增版本号和 APK 证书，再交给 Android 安装器确认。仓库的 README 包含密钥和 Pages 配置方法。</p>
+        </section>
+        <footer>ASB · <a href="https://github.com/copy/v86">v86 项目</a></footer>
+    </main>
+</div>
+</body>
+</html>

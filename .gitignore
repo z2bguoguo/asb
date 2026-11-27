@@ -1,8 +1,13 @@
 .gradle/
 **/build/
 local.properties
+.idea/
 *.jks
 *.keystore
-node_modules/
-dist/
-.idea/
+*.p12
+.env*
+wiki/node_modules/
+vm/node_modules/
+vm/dist/
+wiki/dist/
+vm/.firmware/

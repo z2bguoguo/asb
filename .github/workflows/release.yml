@@ -1,0 +1,82 @@
+name: Publish ASB
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['wiki/**', '**.md']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: asb-release
+  cancel-in-progress: false
+
+jobs:
+  signed-apk:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      EXPECTED_CERT: ${{ vars.ASB_SIGNER_SHA256 }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release configuration
+        id: setup
+        env:
+          ASB_KEYSTORE_BASE64: ${{ secrets.ASB_KEYSTORE_BASE64 }}
+          ASB_KEYSTORE_PASSWORD: ${{ secrets.ASB_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ASB_KEYSTORE_BASE64" && test -n "$ASB_KEYSTORE_PASSWORD" || {
+            echo "::error::Missing ASB release signing secrets. See README."
+            exit 1
+          }
+          [[ "$EXPECTED_CERT" =~ ^[a-f0-9]{64}$ ]] || {
+            echo "::error::Missing or invalid ASB_SIGNER_SHA256 repository variable."
+            exit 1
+          }
+          echo "tag=v0.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: vm/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: npm --prefix vm ci && npm --prefix vm run build && npm --prefix vm test
+      - name: Build and verify signing certificate
+        env:
+          ASB_KEYSTORE_BASE64: ${{ secrets.ASB_KEYSTORE_BASE64 }}
+          ASB_KEYSTORE_PASSWORD: ${{ secrets.ASB_KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ steps.setup.outputs.tag }}
+        run: |
+          set -euo pipefail
+          umask 077
+          export ASB_KEYSTORE_PATH="$RUNNER_TEMP/asb-release.p12"
+          trap 'rm -f "$ASB_KEYSTORE_PATH"' EXIT
+          printf '%s' "$ASB_KEYSTORE_BASE64" | base64 --decode > "$ASB_KEYSTORE_PATH"
+          gradle :app:assembleRelease :app:lintRelease -PasbVersionCode="$GITHUB_RUN_NUMBER" -PasbVersionName="${RELEASE_TAG#v}"
+          cp app/build/outputs/apk/release/app-release.apk ASB-release.apk
+          verify="$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs ASB-release.apk)"
+          digest="$(awk -F ': ' '/^Signer #[0-9]+ certificate SHA-256 digest:/ {print $2}' <<< "$verify")"
+          [[ "$digest" == "$EXPECTED_CERT" ]] || { echo "::error::APK certificate does not match ASB_SIGNER_SHA256"; exit 1; }
+          sha256sum ASB-release.apk > ASB-release.apk.sha256
+      - name: Publish GitHub release
+        env:
+          RELEASE_TAG: ${{ steps.setup.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "$RELEASE_TAG is already published"
+          else
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "ASB ${RELEASE_TAG#v}" \
+              --generate-notes ASB-release.apk ASB-release.apk.sha256
+          fi

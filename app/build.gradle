@@ -1,0 +1,48 @@
+plugins { id 'com.android.application' }
+
+def signingFile = System.getenv('ASB_KEYSTORE_PATH')
+android {
+    namespace 'cn.z2b.asb'
+    compileSdk 36
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        applicationId 'cn.z2b.asb'
+        minSdk 30
+        targetSdk 35
+        versionCode (providers.gradleProperty('asbVersionCode').orElse('1').get().toInteger())
+        versionName providers.gradleProperty('asbVersionName').orElse('0.1.0-dev').get()
+    }
+    signingConfigs {
+        release {
+            if (signingFile) {
+                storeFile file(signingFile)
+                storePassword System.getenv('ASB_KEYSTORE_PASSWORD')
+                keyAlias 'asb'
+                keyPassword System.getenv('ASB_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug { applicationIdSuffix '.debug' }
+        release {
+            if (signingFile) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation 'dev.rikka.shizuku:api:13.1.5'
+    implementation 'dev.rikka.shizuku:provider:13.1.5'
+}
+
+android.sourceSets.main.assets.srcDir rootProject.file('vm/dist')
+tasks.named('preBuild').configure {
+    doFirst {
+        if (!rootProject.file('vm/dist/index.html').exists()) {
+            throw new GradleException('Build VM assets first: npm --prefix vm ci && npm --prefix vm run build')
+        }
+    }
+}

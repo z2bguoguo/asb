@@ -1,0 +1,23 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <application android:name=".AsbApplication" android:allowBackup="false" android:icon="@drawable/ic_asb" android:usesCleartextTraffic="false"
+        android:label="ASB 沙盒" android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".GuestActivity" android:exported="false" android:process=":guest"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" />
+        <provider android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku" android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" android:exported="true" />
+        <receiver android:name=".Updates$InstallResult" android:exported="false" />
+        <service android:name=".Updates$BackgroundCheck"
+            android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
+    </application>
+</manifest>

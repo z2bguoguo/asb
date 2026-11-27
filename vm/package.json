@@ -1,0 +1,7 @@
+{
+  "name": "asb-vm",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node scripts/stage.mjs", "test": "node --test" },
+  "dependencies": { "v86": "0.5.476" }
+}

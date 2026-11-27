@@ -1,0 +1,43 @@
+name: Build ASB
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            vm/package-lock.json
+            wiki/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: npm --prefix vm ci && npm --prefix vm run build && npm --prefix vm test
+      - run: gradle :app:assembleDebug :app:lintDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ASB-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - run: npm --prefix wiki ci && npm --prefix wiki run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wiki
+          path: wiki/dist
+          if-no-files-found: error

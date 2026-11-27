@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASB 虚拟机</title>
+<link rel="stylesheet" href="/console.css">
+<script type="module" src="/console.mjs"></script>
+</head>
+<body>
+<header>
+    <p class="brand">ASB / 虚拟机</p>
+    <div id="status" role="status" aria-live="polite">虚拟机未启动</div>
+</header>
+<main>
+    <section id="configuration">
+        <h1>启动来宾</h1>
+        <label>启动 ISO <input type="file" id="iso"></label>
+        <label>临时主磁盘 <input type="file" id="disk"></label>
+        <label>持久磁盘
+            <select id="persistent"><option value="">无</option></select>
+        </label>
+        <button type="button" id="create-disk">创建 2 GiB 私有磁盘</button>
+        <label>来宾内存
+            <select id="memory"><option>256</option><option selected>512</option><option>1024</option></select> MiB
+        </label>
+        <label>失焦行为
+            <select id="focus"><option value="pause">暂停虚拟机</option><option value="input">仅释放输入</option></select>
+        </label>
+        <div class="actions">
+            <button id="start" class="primary" type="button">启动</button>
+            <button id="restore" type="button">恢复检查点</button>
+        </div>
+        <p>支持 32 位 x86 启动 ISO 或 RAW 磁盘。ISO 与主磁盘可同时挂载以安装来宾系统。</p>
+    </section>
+    <section id="console" hidden>
+        <div class="actions">
+            <button id="pause" type="button">暂停</button>
+            <button id="keyboard" type="button">软键盘</button>
+            <button id="save" type="button">保存检查点</button>
+            <button id="reset" type="button">关闭虚拟机</button>
+        </div>
+        <div id="screen" tabindex="0" aria-label="来宾 VGA 屏幕"><div></div><canvas style="display:none"></canvas></div>
+        <div class="actions" id="keys">
+            <button type="button" data-key="1">Esc</button>
+            <button type="button" data-key="28">Enter</button>
+            <button type="button" data-key="224,72">↑</button>
+            <button type="button" data-key="224,80">↓</button>
+            <button type="button" data-key="56,59">Alt+F1</button>
+            <button type="button" data-key="56,61">Alt+F3</button>
+            <button type="button" data-key="29,56,224,83">Ctrl+Alt+Del</button>
+        </div>
+        <details>
+            <summary>文件策略</summary>
+            <label>模式 <select id="exchange-mode">
+                <option value="block">阻止外部文件</option>
+                <option value="custom">自定义文本</option>
+                <option value="file">穿透 · 指定一个文件</option>
+            </select></label>
+            <label id="custom-input" hidden>UTF-8 文本 <textarea id="custom" maxlength="65536"></textarea></label>
+            <label id="file-input" hidden>系统文件选择器 <input id="exchange-file" type="file"></label>
+            <div class="actions">
+                <button id="mount" type="button">应用策略</button>
+                <button id="eject" type="button">弹出来宾光盘</button>
+            </div>
+            <p>传输使用只读虚拟光盘。更换光盘前，请先在来宾系统卸载当前光盘。</p>
+        </details>
+        <form id="keyboard-form" hidden>
+            <label>来宾键盘 (美式布局) <input id="typing" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+            <button type="submit">输入</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>
