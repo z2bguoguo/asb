@@ -22,6 +22,7 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -60,9 +61,13 @@ final class Updates {
             if (response != 200) throw new IOException("GitHub 返回 HTTP " + response);
             JSONObject json;
             try (InputStream stream = connection.getInputStream()) {
-                byte[] bytes = stream.readNBytes(256 * 1024 + 1);
-                if (bytes.length > 256 * 1024) throw new IOException("更新元数据过大");
-                json = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
+                ByteArrayOutputStream body = new ByteArrayOutputStream();
+                byte[] buffer = new byte[8192];
+                for (int count; (count = stream.read(buffer)) != -1;) {
+                    if (body.size() + count > 256 * 1024) throw new IOException("更新元数据过大");
+                    body.write(buffer, 0, count);
+                }
+                json = new JSONObject(new String(body.toByteArray(), StandardCharsets.UTF_8));
             }
             String tag = json.getString("tag_name");
             if (!tag.matches("v0\\.1\\.[0-9]{1,9}")) throw new IOException("未知的发布版本格式");
@@ -134,7 +139,10 @@ final class Updates {
             try (PackageInstaller.Session session = installer.openSession(id)) {
                 try (FileInputStream source = new FileInputStream(file);
                      var target = session.openWrite("base.apk", 0, file.length())) {
-                    source.transferTo(target);
+                    byte[] buffer = new byte[65536];
+                    for (int count; (count = source.read(buffer)) != -1;) {
+                        target.write(buffer, 0, count);
+                    }
                     session.fsync(target);
                 }
                 Intent result = new Intent(context, InstallResult.class).setAction("cn.z2b.asb.INSTALL_RESULT");

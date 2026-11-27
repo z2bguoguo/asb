@@ -4,6 +4,7 @@ def signingFile = System.getenv('ASB_KEYSTORE_PATH')
 android {
     namespace 'cn.z2b.asb'
     compileSdk 36
+    buildToolsVersion '36.0.0'
     buildFeatures { buildConfig true }
     defaultConfig {
         applicationId 'cn.z2b.asb'

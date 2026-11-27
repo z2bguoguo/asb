@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,11 +23,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Verify Android SDK
+        run: |
+          test -f "$ANDROID_HOME/platforms/android-36/android.jar"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner"
       - run: npm --prefix vm ci && npm --prefix vm run build && npm --prefix vm test
       - run: gradle :app:assembleDebug :app:lintDebug
       - uses: actions/upload-artifact@v4
@@ -35,6 +37,16 @@ jobs:
           name: ASB-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  wiki:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: wiki/package-lock.json
       - run: npm --prefix wiki ci && npm --prefix wiki run build
       - uses: actions/upload-artifact@v4
         with:
