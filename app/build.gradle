@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application' version '8.9.2'
+}
+
+def signingPath = providers.environmentVariable('ASB_KEYSTORE').orNull
+android {
+    namespace 'io.github.z2bguoguo.asb'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'io.github.z2bguoguo.asb'
+        minSdk 30
+        targetSdk 35
+        versionCode (providers.environmentVariable('ASB_VERSION_CODE').orElse('1').get().toInteger())
+        versionName providers.environmentVariable('ASB_VERSION_NAME').orElse('0.1.0').get()
+    }
+    if (signingPath) {
+        signingConfigs {
+            release {
+                storeFile file(signingPath)
+                storePassword System.getenv('ASB_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ASB_KEY_ALIAS')
+                keyPassword System.getenv('ASB_KEY_PASSWORD')
+            }
+        }
+        buildTypes.release.signingConfig signingConfigs.release
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'dev.rikka.shizuku:api:13.1.5'
+    implementation 'dev.rikka.shizuku:provider:13.1.5'
+}

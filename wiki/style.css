@@ -1,0 +1,60 @@
+:root {
+  color-scheme: light;
+  font: 16px/1.65 system-ui, "Noto Sans CJK SC", sans-serif;
+  color: #17273a;
+  background: #f1f5f9;
+  --accent: #1758a1;
+  --line: #ccdae7;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: var(--accent); text-underline-offset: .18em; }
+a:focus-visible { outline: 3px solid #427cb9; outline-offset: 4px; }
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .9rem max(1.2rem, calc((100% - 70rem) / 2)); background: #132b47; color: #fff;
+}
+.top a { color: inherit; text-decoration: none; }
+.brand { display: flex; gap: .75rem; font-weight: 680; align-items: center; }
+.brand span {
+  display: inline-grid; place-items: center; background: #dceaff; color: #132b47;
+  border-radius: .35rem; padding: .15rem .48rem; font: bold .85rem/1.5 ui-monospace, monospace;
+}
+.shell {
+  margin: 0 auto; max-width: 74rem; padding: 2.5rem 2rem 4rem;
+  display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 3rem;
+}
+nav {
+  display: flex; flex-direction: column; align-self: start; position: sticky; top: 2rem;
+  border-left: 2px solid var(--line); padding-left: .85rem; gap: .7rem;
+}
+nav a { text-decoration: none; font-size: .9rem; }
+nav a:hover, .repository:hover { text-decoration: underline; }
+main { min-width: 0; max-width: 53rem; }
+section { scroll-margin-top: 1rem; margin: 0 0 2.5rem; }
+section + section { border-top: 1px solid var(--line); padding-top: 1.7rem; }
+h1, h2 { line-height: 1.18; letter-spacing: -.035em; margin: 0 0 1rem; }
+h1 { font-size: clamp(2.4rem, 6vw, 4.25rem); }
+h2 { font-size: 1.9rem; }
+.eyebrow { color: var(--accent); margin: 0 0 .35rem; font-weight: 650; }
+.lede { font-size: 1.22rem; max-width: 34rem; margin-top: 0; color: #435a73; }
+.download {
+  display: inline-block; background: #194d85; color: #fff; padding: .54rem .95rem;
+  border-radius: .4rem; text-decoration: none; font-weight: 640;
+}
+ol { padding-left: 1.4rem; }
+li + li { margin-top: .3rem; }
+.table-wrap { overflow: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 26rem; background: #fff; }
+th, td { padding: .65rem .75rem; text-align: left; vertical-align: top; border: 1px solid var(--line); }
+th { background: #dfebf8; }
+th:first-child, td:first-child { white-space: nowrap; }
+code { font-family: ui-monospace, monospace; font-size: .89em; }
+pre {
+  overflow: auto; border-radius: .5rem; margin: 1rem 0; padding: .9rem 1rem;
+  background: #172c46; color: #e2f0ff;
+}
+@media (max-width: 720px) {
+  .shell { display: block; padding: 1.55rem 1.2rem 2.5rem; }
+  nav { position: static; flex-direction: row; flex-wrap: wrap; border: 0; padding: 0; margin-bottom: 2rem; }
+}
